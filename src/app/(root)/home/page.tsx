@@ -41,7 +41,7 @@ export default function Component() {
 
       parsedUrl.hash = "";
       return parsedUrl.toString();
-    } catch (error) {
+    } catch {
       return "Invalid URL";
     }
   };

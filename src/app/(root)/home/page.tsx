@@ -1,55 +1,43 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { Loader2 } from "lucide-react";
 import Image from "next/image";
 import Logo from "@/app/components/Logo";
+import { sanitizeUrl } from "@/app/utils/urlSanitizer";
 
 export default function Component() {
   const [url, setUrl] = useState("");
   const [sanitizedUrl, setSanitizedUrl] = useState("");
   const [isAnimating, setIsAnimating] = useState(false);
 
-  const handleSanitize = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSanitize = useCallback((e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!url.trim()) return;
+    
     setIsAnimating(true);
+    
+    // Simulate processing time for better UX
     setTimeout(() => {
       const result = sanitizeUrl(url);
       setSanitizedUrl(result);
       setIsAnimating(false);
-    }, 3000);
-  };
-
-  const sanitizeUrl = (url: string): string => {
-    try {
-      const parsedUrl = new URL(url);
-
-      if (
-        parsedUrl.hostname === "www.youtube.com" ||
-        parsedUrl.hostname === "youtube.com" ||
-        parsedUrl.hostname === "music.youtube.com"
-      ) {
-        const videoId = parsedUrl.searchParams.get("v");
-        if (videoId) {
-          parsedUrl.search = `?v=${videoId}`;
-        } else {
-          parsedUrl.search = "";
-        }
-      } else {
-        parsedUrl.search = "";
-      }
-
-      parsedUrl.hash = "";
-      return parsedUrl.toString();
-    } catch {
-      return "Invalid URL";
-    }
-  };
-
-  useEffect(() => {
-    setIsAnimating(false);
-    setSanitizedUrl("");
+    }, 1500); // Reduced from 3000ms to 1500ms for better UX
   }, [url]);
+
+  const isUrlValid = useMemo(() => {
+    return url.trim().length > 0;
+  }, [url]);
+
+  const handleUrlChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const newUrl = e.target.value;
+    setUrl(newUrl);
+    
+    // Clear sanitized URL when input changes
+    if (sanitizedUrl) {
+      setSanitizedUrl("");
+    }
+  }, [sanitizedUrl]);
 
   return (
     <div className="flex flex-col min-h-screen bg-black">
@@ -68,6 +56,9 @@ export default function Component() {
               width={512}
               height={523}
               className="rounded-lg"
+              priority
+              placeholder="blur"
+              blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
             />
           </div>
           <h2 className="text-xl font-semibold mb-6 text-center text-white">
@@ -78,20 +69,21 @@ export default function Component() {
               type="text"
               placeholder="Enter your URL"
               value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              className="w-full p-2 bg-slate-700 rounded-md outline-none placeholder-shown: text-white font-medium text-sm"
+              onChange={handleUrlChange}
+              className="w-full p-2 bg-slate-700 rounded-md outline-none placeholder:text-gray-400 text-white font-medium text-sm"
+              disabled={isAnimating}
             />
             <button
               type="submit"
               className={`w-full p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors ${
-                url
+                isUrlValid && !isAnimating
                   ? "bg-gray-600 text-white hover:bg-gray-500 focus:ring-gray-400 font-semibold"
-                  : "bg-gray-700 text-gray-500 cursor-not-allowed hover:cursor-not-allowed font-semibold"
+                  : "bg-gray-700 text-gray-500 cursor-not-allowed font-semibold"
               }`}
-              disabled={!url || isAnimating}
+              disabled={!isUrlValid || isAnimating}
             >
               {isAnimating ? (
-                <Loader2 className="animate-spin mx-auto" />
+                <Loader2 className="animate-spin mx-auto h-5 w-5" />
               ) : (
                 "Scrub"
               )}

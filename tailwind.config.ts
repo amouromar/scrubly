@@ -15,5 +15,12 @@ const config: Config = {
     },
   },
   plugins: [],
+  // Optimize for production
+  corePlugins: {
+    preflight: true,
+  },
+  // Reduce bundle size by only including used utilities
+  safelist: [],
 };
+
 export default config;
